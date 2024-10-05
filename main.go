@@ -2,26 +2,45 @@ package main
 
 import (
 	"fmt"
-	"sync"
+	"net"
+	"sort"
+	"time"
 )
 
-func worker(ports chan int, wg *sync.WaitGroup) {
+func worker(ports chan int, results chan<- int) {
 	for port := range ports {
-		fmt.Println(port)
-		wg.Done()
+		address := fmt.Sprintf("scanme.nmap.org:%d", port)
+		conn, err := net.DialTimeout("tcp", address, 1*time.Second)
+		if err != nil {
+			results <- 0
+			continue
+		}
+		conn.Close()
+		results <- port
 	}
 }
 
 func main() {
 	ports := make(chan int, 100)
-	var wg sync.WaitGroup
+	results := make(chan int)
 	for i := 0; i < cap(ports); i++ {
-		go worker(ports, &wg)
+		go worker(ports, results)
 	}
+	go func() {
+		for i := 1; i < 1024; i++ {
+			ports <- i
+		}
+	}()
+
+	var openPorts []int
 	for i := 1; i < 1024; i++ {
-		wg.Add(1)
-		ports <- i
+		if port := <-results; port != 0 {
+			openPorts = append(openPorts, port)
+		}
 	}
-	wg.Wait()
+	sort.Ints(openPorts)
+	for _, port := range openPorts {
+		fmt.Printf("%d open\n", port)
+	}
 	close(ports)
 }
