@@ -6,8 +6,16 @@ import (
 )
 
 func main() {
-	_, err := net.Dial("tcp", "scanme.nmap.org:80")
-	if err == nil {
-		fmt.Print("Connection successful")
+
+	for i := 1; i <= 1024; i++ {
+		address := fmt.Sprintf("scanme.nmap.org:%d", i)
+
+		conn, err := net.Dial("tcp", address)
+		if err != nil {
+			fmt.Printf("Port '%d' closed\n", i)
+			continue
+		}
+		conn.Close()
+		fmt.Printf("Port '%d' opened\n", i)
 	}
 }
