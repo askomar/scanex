@@ -17,7 +17,6 @@ func main() {
 
 			conn, err := net.Dial("tcp", address)
 			if err != nil {
-				fmt.Printf("Port '%d' closed\n", i)
 				return
 			}
 			conn.Close()
